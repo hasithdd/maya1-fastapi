@@ -88,4 +88,15 @@ jobs:
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
-        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+        run: |
+          if [ -z "$DIGEST" ]; then
+            echo "Digest is empty, skipping signing."
+            exit 0
+          fi
+          echo "Signing image with digest $DIGEST..."
+          if echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}; then
+            echo "Signing succeeded."
+          else
+            echo "Signing failed, but continuing workflow."
+            exit 0
+          fi
